@@ -12,6 +12,7 @@ import {
   createUser,
   deleteUser,
   getFullUserById,
+  getUserByEmail,
   getUserById,
   updateUserFromId,
 } from "./queries/users";
@@ -21,10 +22,8 @@ import {
   isPasswordLongEnough,
   isPasswordValid,
 } from "./functions";
-import { hash } from "bcryptjs";
-
-const USER_ID_COOKIE = "userId";
-const COOKIE_MAX_AGE = 60 * 60 * 24; // 1 day
+import { compare, hash } from "bcryptjs";
+import { clearUserCookie, getUserIdFromCookie, setUserCookie } from "./auth";
 
 /**
  * This function is used to create a new user in the database.
@@ -35,9 +34,10 @@ const COOKIE_MAX_AGE = 60 * 60 * 24; // 1 day
  *            if not, ok property will be false and the errors property will be a custom object with the errors.
  */
 export async function createUserAction(
-  prevState: CreateUserResult,
+  prevState: CreateUserResult | null,
   formData: FormData,
 ): Promise<CreateUserResult> {
+  console.log("=== SERVER ACTION CALLED ===");
   const email = formData.get("email") as string;
   const name = formData.get("name") as string;
   const password = formData.get("password") as string;
@@ -55,22 +55,20 @@ export async function createUserAction(
   if (!isPasswordLongEnough(password)) {
     errors.password = "Password must be at least 8 characters long";
   }
+  console.log("=== SERVER ACTION errors: ", errors);
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
   }
+  console.log("=== SERVER ACTION continuing... ===");
   const hashedPassword = await hash(password.trim(), 12);
   const result = await createUser(email.trim(), name.trim(), hashedPassword);
   if (result.ok && result.id != null) {
-    const store = await cookies();
-    store.set(USER_ID_COOKIE, String(result.id), {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: COOKIE_MAX_AGE,
-    });
+    await setUserCookie(result.id);
   }
+  console.log("=== SERVER ACTION CALLED ===");
   return result;
 }
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -80,12 +78,9 @@ export async function createUserAction(
  */
 export async function getCurrentUserById() {
   //get the user id from the cookie
-  const store = await cookies();
-  const value = store.get(USER_ID_COOKIE)?.value;
-  if (!value) return null;
-  const id = parseInt(value, 10);
-  const userId = Number.isNaN(id) ? null : id;
-  if (userId == null) {
+
+  const userId = await getUserIdFromCookie();
+  if (userId === null) {
     notFound();
   }
   const user = await getUserById(userId);
@@ -94,6 +89,7 @@ export async function getCurrentUserById() {
   }
   return user;
 }
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -102,11 +98,10 @@ export async function getCurrentUserById() {
  * Use as a form action or call from a "Log out" button (e.g. form action={logoutAction} or startTransition(() => logoutAction())).
  */
 export async function logoutAction(): Promise<never> {
-  const store = await cookies();
-  store.delete(USER_ID_COOKIE);
-  // await clearUserCookie();
+  await clearUserCookie();
   redirect("/");
 }
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -119,28 +114,34 @@ export async function logoutAction(): Promise<never> {
 export async function deleteUserAction(id: number, path: string) {
   const result = await deleteUser(id);
   if (result) {
+    await clearUserCookie();
     redirect(path);
   } else {
     console.error("Failed to delete user");
   }
 }
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+//TODO
 export async function updateProfileAction(
-  _state: updateUserResult,
+  _state: updateUserResult | null,
   formData: FormData,
 ): Promise<updateUserResult> {
-  const store = await cookies();
-  const value = store.get(USER_ID_COOKIE)?.value;
-  if (!value) return { ok: false, errors: { general: "Not authenticated" } };
-  const id = parseInt(value, 10);
-  const userId = Number.isNaN(id) ? null : id;
-  if (userId == null)
-    return { ok: false, errors: { general: "Invalid session" } };
+  // const store = await cookies();
+  // const value = store.get(USER_ID_COOKIE)?.value;
+  // if (!value) return { ok: false, errors: { general: "Not authenticated" } };
+  // const id = parseInt(value, 10);
+  // const userId = Number.isNaN(id) ? null : id;
+  // if (userId == null)
+  //   return { ok: false, errors: { general: "Invalid session" } };
+  const userId = await getUserIdFromCookie();
+  if (userId === null) {
+    notFound();
+  }
   const prevUser = await getFullUserById(userId);
   if (!prevUser) return { ok: false, errors: { general: "User not found" } };
-
   const email = formData.get("email") as string;
   const name = formData.get("name") as string;
   const password = formData.get("password") as string;
@@ -202,4 +203,51 @@ export async function updateProfileAction(
     updatedUser.name.trim(),
     updatedUser.password,
   );
+}
+//❌
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+export async function loginAction(
+  _state: CreateUserResult | null,
+  formData: FormData,
+): Promise<CreateUserResult> {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const genericErrorMsg = "Invalid email or password";
+
+  if (!email || !password) {
+    return {
+      ok: false,
+      errors: { general: "Email and password are both required" },
+    };
+  }
+  if (
+    !isEmailValid(email) ||
+    !isPasswordValid(password) ||
+    !isPasswordLongEnough(password)
+  ) {
+    return {
+      ok: false,
+      errors: { general: genericErrorMsg },
+    };
+  }
+
+  const user = await getUserByEmail(email.trim());
+  if (!user) {
+    return {
+      ok: false,
+      errors: { general: genericErrorMsg },
+    };
+  }
+
+  const isSamePassword = await compare(password.trim(), user.password);
+  if (!isSamePassword) {
+    return {
+      ok: false,
+      errors: { general: genericErrorMsg },
+    };
+  }
+  await setUserCookie(user.id);
+  redirect("/profile");
 }

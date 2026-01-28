@@ -1,19 +1,16 @@
 "use client";
 
+import UserInfoInputs from "@/components/user-info-inputs";
 import { createUserAction } from "@/lib/actions";
 import { redirect } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
 export default function Home() {
-  const [result, formAction] = useActionState(createUserAction, { ok: false });
+  return <>home page</>;
+}
 
-  if (result.ok) {
-    redirect("/profile");
-  }
-  return (
-    <div>
-      <form action={formAction}>
-        <div>
+{
+  /* <div>
           <label htmlFor="email">Email</label>
           <input
             type="email"
@@ -50,9 +47,5 @@ export default function Home() {
           {result?.errors?.password && (
             <p className="text-red-500">{result.errors.password}</p>
           )}
-        </div>
-        <button>create new user!</button>
-      </form>
-    </div>
-  );
+        </div> */
 }

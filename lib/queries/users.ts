@@ -49,6 +49,7 @@ export async function createUser(
     throw e;
   }
 }
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -64,7 +65,11 @@ export async function getUserById(id: number) {
     | undefined;
   return row ?? null;
 }
+//✅
 
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//TODO - check if correct.
 /**
  * Returns the full user including password. Used by server actions that need to update the user.
  */
@@ -75,6 +80,7 @@ export async function getFullUserById(id: number): Promise<User | null> {
     | undefined;
   return row ?? null;
 }
+//❌
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -83,9 +89,11 @@ export async function deleteUser(id: number) {
   const result = db.prepare("DELETE FROM users WHERE id = ?").run(id);
   return result.changes > 0;
 }
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+// TODO
 export async function updateUserFromId(
   id: number,
   email: string,
@@ -102,3 +110,15 @@ export async function updateUserFromId(
       result.changes === 0 ? { general: "Failed to update user" } : undefined,
   };
 }
+//❌
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+export async function getUserByEmail(email: string) {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as
+    | User
+    | undefined;
+  return row ?? null;
+}
+//✅
