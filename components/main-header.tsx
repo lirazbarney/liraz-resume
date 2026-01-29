@@ -1,10 +1,13 @@
-import { getCurrentUserById, logoutAction } from "@/lib/actions";
+import { logoutAction } from "@/lib/actions";
 import Link from "next/link";
 import { ClientButton } from "./basic-client-components";
+import { UserWithoutPassWord } from "@/types/user";
 
-export default async function MainHeader() {
-  const user = await getCurrentUserById();
+type MainHeaderProps = {
+  userName: string | null;
+};
 
+export default async function MainHeader({ userName }: MainHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
       <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
@@ -14,14 +17,14 @@ export default async function MainHeader() {
         >
           Home
         </Link>
-        {user ? (
+        {userName ? (
           <ul className="flex items-center gap-1 sm:gap-2">
             <li>
               <Link
                 href="/profile"
                 className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface-elevated)] hover:text-[var(--foreground)]"
               >
-                hello, {user.name}
+                hello, {userName}
               </Link>
             </li>
             <li>

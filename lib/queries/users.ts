@@ -101,19 +101,43 @@ export async function updateUserFromId(
   password: string,
 ): Promise<updateUserResult> {
   const db = getDb();
-  const result = db
-    .prepare("UPDATE users SET email = ?, name = ?, password = ? WHERE id = ?")
-    .run(email, name, password, id);
-  return {
-    ok: result.changes > 0,
-    errors:
-      result.changes === 0 ? { general: "Failed to update user" } : undefined,
-  };
+  try {
+    const result = db
+      .prepare(
+        "UPDATE users SET email = ?, name = ?, password = ? WHERE id = ?",
+      )
+      .run(email, name, password, id);
+    return {
+      ok: result.changes > 0,
+      errors:
+        result.changes === 0 ? { general: "Failed to update user" } : undefined,
+    };
+  } catch (error: unknown) {
+    const isNotUnique =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "SQLITE_CONSTRAINT" &&
+      "message" in error &&
+      typeof (error as any).message === "string" &&
+      (error as any).message.includes("email");
+    return {
+      ok: false,
+      errors: isNotUnique
+        ? { email: "This email is already in use" }
+        : { general: "Failed to update user" },
+    };
+  }
 }
 //❌
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+/**
+ *
+ * @param email - the email of the user
+ * @returns the user object without the password or null if the user is not found.
+ */
 export async function getUserByEmail(email: string) {
   const db = getDb();
   const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as
@@ -122,3 +146,14 @@ export async function getUserByEmail(email: string) {
   return row ?? null;
 }
 //✅
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+export async function getUserNameById(id: number) {
+  const db = getDb();
+  const row = db.prepare("SELECT name FROM users WHERE id = ?").get(id) as
+    | { name: string }
+    | undefined;
+  return row?.name ?? null;
+}
+//

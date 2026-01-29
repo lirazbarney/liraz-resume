@@ -12,10 +12,7 @@ function formatDate(iso: string) {
 }
 
 export default async function ProfilePage() {
-  const user = (await getCurrentUserById()) as UserWithoutPassWord;
-  if (!user) {
-    notFound();
-  }
+  const user = (await getCurrentUserById(true)) as UserWithoutPassWord;
 
   return (
     <main className="mx-auto min-h-[calc(100vh-3.5rem)] max-w-2xl px-4 py-12 sm:py-16">

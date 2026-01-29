@@ -1,10 +1,5 @@
 "use client";
 
-import UserInfoInputs from "@/components/user-info-inputs";
-import { createUserAction } from "@/lib/actions";
-import { redirect } from "next/navigation";
-import { useActionState, useEffect } from "react";
-
 export default function Home() {
   return <>home page</>;
 }

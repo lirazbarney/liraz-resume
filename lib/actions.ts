@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import {
   CreateUserErrors,
@@ -14,6 +13,7 @@ import {
   getFullUserById,
   getUserByEmail,
   getUserById,
+  getUserNameById,
   updateUserFromId,
 } from "./queries/users";
 import {
@@ -55,17 +55,15 @@ export async function createUserAction(
   if (!isPasswordLongEnough(password)) {
     errors.password = "Password must be at least 8 characters long";
   }
-  console.log("=== SERVER ACTION errors: ", errors);
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
   }
-  console.log("=== SERVER ACTION continuing... ===");
   const hashedPassword = await hash(password.trim(), 12);
   const result = await createUser(email.trim(), name.trim(), hashedPassword);
   if (result.ok && result.id != null) {
     await setUserCookie(result.id);
+    redirect("/profile");
   }
-  console.log("=== SERVER ACTION CALLED ===");
   return result;
 }
 //✅
@@ -76,16 +74,26 @@ export async function createUserAction(
  * This function is used to get the current user data by the id from the cookie.
  * @returns the current user data object or redirect to the closest not-found page.
  */
-export async function getCurrentUserById() {
+export async function getCurrentUserById(isRedirect: boolean) {
   //get the user id from the cookie
 
   const userId = await getUserIdFromCookie();
   if (userId === null) {
-    notFound();
+    console.log("testing A");
+    if (isRedirect) {
+      console.log("testing B");
+      notFound();
+    }
+    console.log("testing C");
+    return null;
   }
+  console.log("testing D");
   const user = await getUserById(userId);
   if (!user) {
-    notFound();
+    if (isRedirect) {
+      notFound();
+    }
+    return null;
   }
   return user;
 }
@@ -124,28 +132,32 @@ export async function deleteUserAction(id: number, path: string) {
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-//TODO
+/**
+ *
+ * @param _state - the previous state of the form. not relevant.
+ * @param formData - the form data from the user.
+ * @returns the result of the update.
+ *            if successfull, ok property will be true.
+ *            if not, ok property will be false and the errors property will be a custom object with the errors.
+ */
 export async function updateProfileAction(
   _state: updateUserResult | null,
   formData: FormData,
 ): Promise<updateUserResult> {
-  // const store = await cookies();
-  // const value = store.get(USER_ID_COOKIE)?.value;
-  // if (!value) return { ok: false, errors: { general: "Not authenticated" } };
-  // const id = parseInt(value, 10);
-  // const userId = Number.isNaN(id) ? null : id;
-  // if (userId == null)
-  //   return { ok: false, errors: { general: "Invalid session" } };
   const userId = await getUserIdFromCookie();
+  console.log("=== SERVER ACTION userId: ", userId);
   if (userId === null) {
     notFound();
   }
   const prevUser = await getFullUserById(userId);
-  if (!prevUser) return { ok: false, errors: { general: "User not found" } };
+  console.log("=== SERVER ACTION prevUser: ", prevUser);
+  if (!prevUser) {
+    notFound();
+  }
   const email = formData.get("email") as string;
   const name = formData.get("name") as string;
   const password = formData.get("password") as string;
-  const errors: any = {};
+  const errors: CreateUserErrors = {};
 
   const updatedUser: User = {
     id: prevUser.id,
@@ -197,17 +209,30 @@ export async function updateProfileAction(
     return { ok: false, errors };
   }
 
-  return await updateUserFromId(
+  const result = await updateUserFromId(
     updatedUser.id,
     updatedUser.email.trim(),
     updatedUser.name.trim(),
     updatedUser.password,
   );
+  if (result.ok) {
+    redirect("/profile");
+  }
+  return result;
 }
-//❌
+//✅
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+/**
+ *
+ * @param _state - the previous state of the form. not relevant.
+ * @param formData - the form data from the user.
+ * @returns the result of the login.
+ *            if successfull, ok property will be true.
+ *            if not, ok property will be false and the errors property will be a custom object with the errors.
+ * @returns
+ */
 export async function loginAction(
   _state: CreateUserResult | null,
   formData: FormData,
@@ -216,31 +241,29 @@ export async function loginAction(
   const password = formData.get("password") as string;
   const genericErrorMsg = "Invalid email or password";
 
-  if (!email || !password) {
-    return {
-      ok: false,
-      errors: { general: "Email and password are both required" },
-    };
+  if (!email) {
+    return { ok: false, errors: { email: "Email is required" } };
+  }
+  if (!password) {
+    return { ok: false, errors: { password: "Password is required" } };
   }
   if (
     !isEmailValid(email) ||
     !isPasswordValid(password) ||
     !isPasswordLongEnough(password)
   ) {
-    return {
-      ok: false,
-      errors: { general: genericErrorMsg },
-    };
+    return { ok: false, errors: { general: genericErrorMsg } };
   }
 
   const user = await getUserByEmail(email.trim());
+  console.log("=== SERVER ACTION user: ", user);
   if (!user) {
+    console.log("=== SERVER ACTION testing 1 ");
     return {
       ok: false,
       errors: { general: genericErrorMsg },
     };
   }
-
   const isSamePassword = await compare(password.trim(), user.password);
   if (!isSamePassword) {
     return {
@@ -250,4 +273,15 @@ export async function loginAction(
   }
   await setUserCookie(user.id);
   redirect("/profile");
+}
+//✅
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+export async function getUserNameAction() {
+  const userId = await getUserIdFromCookie();
+  if (userId === null) {
+    return null;
+  }
+  return await getUserNameById(userId);
 }

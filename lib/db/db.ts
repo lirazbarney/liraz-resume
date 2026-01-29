@@ -1,13 +1,13 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
+import Database from "better-sqlite3";
+import path from "path";
+import fs from "fs";
 
 /**
  * Database configuration
  * Change the database name to match your project
  */
-const DB_NAME = 'resume.db';
-const DB_DIR = 'data';
+const DB_NAME = "resume.db";
+const DB_DIR = "data";
 
 // Get the database file path
 const dbPath = path.join(process.cwd(), DB_DIR, DB_NAME);
@@ -29,11 +29,15 @@ let initialized = false;
  */
 function initializeTables(database: Database.Database): void {
   // Check if tables already exist by querying sqlite_master
-  const tableCheck = database.prepare(`
+  const tableCheck = database
+    .prepare(
+      `
     SELECT name FROM sqlite_master 
     WHERE type='table' AND name='users'
-  `).get() as { name: string } | undefined;
-  
+  `,
+    )
+    .get() as { name: string } | undefined;
+
   // If tables don't exist, create them
   if (!tableCheck) {
     // Create users table
@@ -46,41 +50,40 @@ function initializeTables(database: Database.Database): void {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ Users table created');
+    console.log("✅ Users table created");
   }
-  // else {
+  //  else {
   //   database.exec(`
   //     DROP TABLE IF EXISTS users;
   //   `);
-  //   console.log('✅ Users table dropped');
+  //   console.log("✅ Users table dropped");
   //   database.exec(`DROP TABLE IF EXISTS posts;`);
-  //   console.log('✅ Posts table dropped');
+  //   console.log("✅ Posts table dropped");
   //   database.exec(`drop index if exists idx_posts_user_id;`);
-  //   console.log('✅ Index dropped');
+  //   console.log("✅ Index dropped");
   // }
-  
 }
 
 /**
  * Get the database connection instance
  * Creates a new connection if one doesn't exist
  * Automatically initializes tables on first access
- * 
+ *
  * @returns Database instance
  */
 export function getDb(): Database.Database {
   if (!db) {
     db = new Database(dbPath);
-    
+
     // Enable foreign keys for referential integrity
-    db.pragma('foreign_keys = ON');
-    
+    db.pragma("foreign_keys = ON");
+
     // Enable WAL mode for better concurrency (optional but recommended)
-    db.pragma('journal_mode = WAL');
-    
+    db.pragma("journal_mode = WAL");
+
     // Optional: Set busy timeout to handle concurrent access
-    db.pragma('busy_timeout = 5000');
-    
+    db.pragma("busy_timeout = 5000");
+
     // Auto-initialize tables on first connection
     if (!initialized) {
       initializeTables(db);
@@ -104,7 +107,7 @@ export function closeDb(): void {
 /**
  * Execute a raw SQL statement
  * Use this for DDL operations (CREATE TABLE, ALTER TABLE, etc.)
- * 
+ *
  * @param sql - SQL statement to execute
  */
 export function execSql(sql: string): void {
