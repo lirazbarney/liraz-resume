@@ -50,7 +50,7 @@ export default function ResumePage() {
       title: "My Portfolio",
       description:
         "A portfolio website built with Next.js and Tailwind CSS. It showcases my projects and skills.",
-      tech: ["Next.js", "Tailwind CSS", "React", "TypeScript"],
+      tech: ["Next.js", "Tailwind CSS", "React", "TypeScript", "SQLite"],
       link: "#",
     },
   ];
