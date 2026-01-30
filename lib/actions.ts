@@ -145,18 +145,17 @@ export async function updateProfileAction(
   formData: FormData,
 ): Promise<updateUserResult> {
   const userId = await getUserIdFromCookie();
-  console.log("=== SERVER ACTION userId: ", userId);
   if (userId === null) {
     notFound();
   }
   const prevUser = await getFullUserById(userId);
-  console.log("=== SERVER ACTION prevUser: ", prevUser);
   if (!prevUser) {
     notFound();
   }
   const email = formData.get("email") as string;
   const name = formData.get("name") as string;
-  const password = formData.get("password") as string;
+  const password = formData.get("password") as string | null;
+  const confirmPassword = formData.get("confirmPassword") as string | null;
   const errors: CreateUserErrors = {};
 
   const updatedUser: User = {
@@ -188,20 +187,29 @@ export async function updateProfileAction(
   }
 
   if (password) {
-    const isValidPassword = isPasswordValid(password);
-    const isLongPassword = isPasswordLongEnough(password);
-
-    if (isValidPassword && isLongPassword) {
-      const hashedPassword = await hash(password.trim(), 12);
-      updatedUser.password = hashedPassword;
+    if (confirmPassword === null) {
+      errors.password = "Confirm password is required";
     } else {
-      if (!isValidPassword) {
-        errors.password = "Invalid password";
+      if (password !== confirmPassword) {
+        errors.password = "Passwords do not match";
       } else {
-        errors.password = "Password must be at least 8 characters long";
+        const isValidPassword = isPasswordValid(password);
+        const isLongPassword = isPasswordLongEnough(password);
+
+        if (isValidPassword && isLongPassword) {
+          const hashedPassword = await hash(password.trim(), 12);
+          updatedUser.password = hashedPassword;
+        } else {
+          if (!isValidPassword) {
+            errors.password = "Invalid password";
+          } else {
+            errors.password = "Password must be at least 8 characters long";
+          }
+        }
       }
     }
   } else {
+    console.log("=== SERVER ACTION testing 9");
     updatedUser.password = prevUser.password;
   }
 

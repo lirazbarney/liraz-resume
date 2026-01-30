@@ -62,8 +62,18 @@ export default function UserInfoInputs({
         errorMSG={(errors?.password as string) || undefined}
         isRequired={isRequired}
       >
-        <PasswordInput isRequired={isRequired} />
+        <PasswordInput isRequired={isRequired} type="password" />
       </InputDiv>
+
+      {type !== "login" && (
+        <InputDiv
+          htmlFor="confirmPassword"
+          label="Confirm Password"
+          isRequired={isRequired}
+        >
+          <PasswordInput isRequired={isRequired} type="confirmPassword" />
+        </InputDiv>
+      )}
 
       {errors?.general && (
         <p className="text-sm text-[var(--danger)]">{errors.general}</p>

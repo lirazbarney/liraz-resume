@@ -2,6 +2,7 @@
 
 import InputsBox from "@/components/inputs/inputs-box";
 import UserInfoInputs from "@/components/inputs/user-info-inputs";
+import Loader from "@/components/loader/loader";
 import { getCurrentUserById, loginAction } from "@/lib/actions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -38,7 +39,7 @@ export default function LoginPage() {
           disabled={isPending}
           className="w-full rounded-lg bg-[var(--primary)] py-3.5 font-semibold text-white transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_0_24px_-4px_var(--purple-500)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-none"
         >
-          {isPending ? "Logging in..." : "Login"}
+          {isPending ? <Loader /> : "Login"}
         </button>
 
         <Link href="/signup">

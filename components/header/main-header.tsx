@@ -1,7 +1,8 @@
 import { logoutAction } from "@/lib/actions";
 import Link from "next/link";
-import { ClientButton } from "./basic-client-components";
+import { ClientButton } from "../basic-client-components";
 import { UserWithoutPassWord } from "@/types/user";
+import HomePageParts from "./home-page-parts";
 
 type MainHeaderProps = {
   userName: string | null;
@@ -9,14 +10,16 @@ type MainHeaderProps = {
 
 export default async function MainHeader({ userName }: MainHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
-      <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-        <Link
-          href="/"
-          className="font-display text-lg font-semibold tracking-tight text-[var(--foreground)] transition-colors hover:text-[var(--primary)]"
-        >
-          Home
+    // <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/80">
+    <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        {/* <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6"> */}
+        <Link href="/">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            {`Liraz Bar-Nir`}
+          </h1>
         </Link>
+        <HomePageParts />
         {userName ? (
           <ul className="flex items-center gap-1 sm:gap-2">
             <li>
@@ -56,7 +59,8 @@ export default async function MainHeader({ userName }: MainHeaderProps) {
             </li>
           </ul>
         )}
-      </nav>
+        {/* </nav> */}
+      </div>
     </header>
   );
 }

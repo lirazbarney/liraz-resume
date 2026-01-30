@@ -17,33 +17,3 @@ export function ClientButton({
     </button>
   );
 }
-
-// type ClientButtonsGroupProps = {
-//   buttons: {
-//     buttonLabel: string;
-//     handleClick: () => void | Promise<void>;
-//   }[];
-//   // buttons: ClientButtonProps[];
-//   className?: string;
-// };
-
-// export function ClientButtonsGroup({
-//   buttons,
-//   className,
-// }: ClientButtonsGroupProps) {
-//   return (
-//     <div>
-//       {buttons.map((button, index) => {
-//         return (
-//           <ClientButton
-//             key={index}
-//             className={className}
-//             handleClick={button.handleClick}
-//           >
-//             {button.buttonLabel}
-//           </ClientButton>
-//         );
-//       })}
-//     </div>
-//   );
-// }

@@ -1,6 +1,6 @@
 import { getCurrentUserById } from "@/lib/actions";
 import { notFound } from "next/navigation";
-import EditProfileForm from "@/components/edit-profile-form";
+import EditProfileForm from "@/components/inputs/edit-profile-form";
 
 export default async function ProfileEditPage() {
   const user = await getCurrentUserById(true);
