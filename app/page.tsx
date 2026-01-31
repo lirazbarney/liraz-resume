@@ -106,6 +106,7 @@ export default function ResumePage() {
     "In my free time I'm working out in calisthenics. ",
     `I'm a big fan of the TV show "South Park" and the whole Marvel cinematic universe.`,
     "I first started learning programming in my 7th grade, and I'm aspiring to keep learning and growing as a developer.",
+    `I was in a youth movement until I graduated from high school and in the summer of 2025 I was a counselor in the jewish summer camp "Camp Wise", Cleaveland, Ohio`,
   ];
 
   return (
