@@ -23,6 +23,8 @@ import ExperienceGrid from "@/components/resume/experience-grid";
 import FunFacts from "@/components/resume/fun-facts";
 import { calculateAge } from "@/lib/functions";
 
+export const runtime = "edge";
+
 export default function ResumePage() {
   const logosMain = [
     { name: "HTML", icon: FaHtml5, color: "#E34C26" },

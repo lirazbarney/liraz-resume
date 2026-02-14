@@ -1,7 +1,6 @@
 import ProfileButtons from "@/components/profile-buttons";
 import { getCurrentUserById } from "@/lib/actions";
 import { UserWithoutPassWord } from "@/types/user";
-import { notFound } from "next/navigation";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -10,6 +9,7 @@ function formatDate(iso: string) {
     day: "numeric",
   });
 }
+export const runtime = "edge";
 
 export default async function ProfilePage() {
   const user = (await getCurrentUserById(true)) as UserWithoutPassWord;

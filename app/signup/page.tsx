@@ -8,6 +8,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 
+export const runtime = "edge";
+
 export default function SignupPage() {
   const [result, formAction, isPending] = useActionState(
     createUserAction,
