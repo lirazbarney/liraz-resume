@@ -32,13 +32,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const userName = await getUserNameAction();
+  const userName = await getUserNameAction();
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} font-sans antialiased`}
       >
-        <MainHeader userName={null} />
+        <MainHeader userName={userName} />
         {children}
       </body>
     </html>
