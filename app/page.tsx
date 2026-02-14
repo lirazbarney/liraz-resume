@@ -109,6 +109,8 @@ export default function ResumePage() {
     `I was in a youth movement until I graduated from high school and in the summer of 2025 I was a counselor in the jewish summer camp "Camp Wise", Cleaveland, Ohio`,
   ];
 
+  const resumeUrl = "/FullStackDevResume0525724163Liraz.pdf";
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Hero Section */}
@@ -171,7 +173,7 @@ export default function ResumePage() {
 
             {/* TODO: Add resume download */}
             <a
-              href="/your-resume.pdf"
+              href={resumeUrl}
               download
               className="inline-block px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all"
             >
@@ -269,7 +271,7 @@ export default function ResumePage() {
             </a>
             {/* TODO: Add resume download */}
             <a
-              href="/your-resume.pdf"
+              href={resumeUrl}
               download
               className="px-8 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-colors border border-gray-600"
             >
