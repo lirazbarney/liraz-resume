@@ -1,116 +1,38 @@
-import Database from "better-sqlite3";
-import path from "path";
-import fs from "fs";
+import { getRequestContext } from "@cloudflare/next-on-pages";
+// No need to import D1Database, it comes from the workers-types package globally
+// but we define the interface here to satisfy the compiler
 
-/**
- * Database configuration
- * Change the database name to match your project
- */
-const DB_NAME = "resume.db";
-const DB_DIR = "data";
-
-// Get the database file path
-const dbPath = path.join(process.cwd(), DB_DIR, DB_NAME);
-
-// Ensure the data directory exists
-const dataDir = path.dirname(dbPath);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+interface CloudflareEnv {
+  DB: D1Database;
 }
 
-// Singleton database connection
-// Note: better-sqlite3 is synchronous, which is perfect for server-side code
-let db: Database.Database | null = null;
-let initialized = false;
+export function getDb() {
+  // Use 'unknown' first to bypass the strict type overlap check you saw in the screenshot
+  const context = getRequestContext() as unknown as { env: CloudflareEnv };
 
+  if (!context || !context.env || !context.env.DB) {
+    throw new Error(
+      "D1 Database binding 'DB' not found. Ensure it is added in Cloudflare Bindings.",
+    );
+  }
+
+  return context.env.DB;
+}
 /**
- * Initialize database tables automatically
- * Called once when the database is first accessed
+ * Initialize tables for D1
+ * In D1, you usually run migrations, but this keeps your "auto-init" logic
  */
-function initializeTables(database: Database.Database): void {
-  // Check if tables already exist by querying sqlite_master
-  const tableCheck = database
-    .prepare(
-      `
-    SELECT name FROM sqlite_master 
-    WHERE type='table' AND name='users'
-  `,
+export async function initializeTables(): Promise<void> {
+  const db = getDb();
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      password TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-    .get() as { name: string } | undefined;
-
-  // If tables don't exist, create them
-  if (!tableCheck) {
-    // Create users table
-    database.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log("✅ Users table created");
-  }
-  //  else {
-  //   database.exec(`
-  //     DROP TABLE IF EXISTS users;
-  //   `);
-  //   console.log("✅ Users table dropped");
-  //   database.exec(`DROP TABLE IF EXISTS posts;`);
-  //   console.log("✅ Posts table dropped");
-  //   database.exec(`drop index if exists idx_posts_user_id;`);
-  //   console.log("✅ Index dropped");
-  // }
-}
-
-/**
- * Get the database connection instance
- * Creates a new connection if one doesn't exist
- * Automatically initializes tables on first access
- *
- * @returns Database instance
- */
-export function getDb(): Database.Database {
-  if (!db) {
-    db = new Database(dbPath);
-
-    // Enable foreign keys for referential integrity
-    db.pragma("foreign_keys = ON");
-
-    // Enable WAL mode for better concurrency (optional but recommended)
-    db.pragma("journal_mode = WAL");
-
-    // Optional: Set busy timeout to handle concurrent access
-    db.pragma("busy_timeout = 5000");
-
-    // Auto-initialize tables on first connection
-    if (!initialized) {
-      initializeTables(db);
-      initialized = true;
-    }
-  }
-  return db;
-}
-
-/**
- * Close the database connection
- * Useful for cleanup in tests or when shutting down
- */
-export function closeDb(): void {
-  if (db) {
-    db.close();
-    db = null;
-  }
-}
-
-/**
- * Execute a raw SQL statement
- * Use this for DDL operations (CREATE TABLE, ALTER TABLE, etc.)
- *
- * @param sql - SQL statement to execute
- */
-export function execSql(sql: string): void {
-  const database = getDb();
-  database.exec(sql);
+  `);
+  console.log("✅ Users table checked/created in D1");
 }
