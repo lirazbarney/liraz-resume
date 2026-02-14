@@ -1,5 +1,4 @@
 "use server";
-//this file is for the queries related to the users table. all of it's funnctions will recived the data after validations.
 
 import { getDb } from "../db/db";
 import {
@@ -9,17 +8,8 @@ import {
   updateUserResult,
 } from "@/types/user";
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 /**
- * All of the parameters are being checked in the action file.
- * This function is just for creating the user in the database.
- * @param email - the email of the user
- * @param name - the name of the user
- * @param password - the hashed password of the user
- * @returns true or false based on the success of the operation in the "ok" property.
- *          If true the id of the user will be returned in the "id" property.
- *          If false an error object will be returned with the error message in the "errors" property.
+ * Creates a user in the D1 database.
  */
 export async function createUser(
   email: string,
@@ -28,17 +18,17 @@ export async function createUser(
 ): Promise<CreateUserResult> {
   const db = getDb();
   try {
-    const result = db
+    const result = await db
       .prepare("INSERT INTO users (email, name, password) VALUES (?, ?, ?)")
-      .run(email, name, password);
-    const id = Number(result.lastInsertRowid);
-    // const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as User;
-    // const { password: _, ...newUser } = user;
-    // return { ok: true, user: newUser };
+      .bind(email, name, password)
+      .run();
+
+    const id = result.meta.last_row_id;
     return { ok: true, id };
   } catch (e: unknown) {
-    const err = e as { code?: string };
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    const err = e as { message?: string };
+    // D1 error messages usually contain the constraint name
+    if (err.message?.includes("UNIQUE constraint failed: users.email")) {
       return {
         ok: false,
         errors: {
@@ -49,51 +39,46 @@ export async function createUser(
     throw e;
   }
 }
-//✅
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
- * This function is for getting the user by the id.
- * @param id - the id of the user
- * @returns the user object without the password or null if the user is not found.
+ * Gets user by ID without password.
  */
 export async function getUserById(id: number) {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as
-    | UserWithoutPassWord
-    | undefined;
+  const row = await db
+    .prepare("SELECT id, email, name, created_at FROM users WHERE id = ?")
+    .bind(id)
+    .first<UserWithoutPassWord>();
   return row ?? null;
 }
-//✅
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-//TODO - check if correct.
 /**
- * Returns the full user including password. Used by server actions that need to update the user.
+ * Gets full user including password.
  */
 export async function getFullUserById(id: number): Promise<User | null> {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as
-    | User
-    | undefined;
+  const row = await db
+    .prepare("SELECT * FROM users WHERE id = ?")
+    .bind(id)
+    .first<User>();
   return row ?? null;
 }
-//❌
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+/**
+ * Deletes user by ID.
+ */
 export async function deleteUser(id: number) {
   const db = getDb();
-  const result = db.prepare("DELETE FROM users WHERE id = ?").run(id);
-  return result.changes > 0;
+  const result = await db
+    .prepare("DELETE FROM users WHERE id = ?")
+    .bind(id)
+    .run();
+  return result.success;
 }
-//✅
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-// TODO
+/**
+ * Updates user details.
+ */
 export async function updateUserFromId(
   id: number,
   email: string,
@@ -102,25 +87,24 @@ export async function updateUserFromId(
 ): Promise<updateUserResult> {
   const db = getDb();
   try {
-    const result = db
+    const result = await db
       .prepare(
         "UPDATE users SET email = ?, name = ?, password = ? WHERE id = ?",
       )
-      .run(email, name, password, id);
+      .bind(email, name, password, id)
+      .run();
+
     return {
-      ok: result.changes > 0,
-      errors:
-        result.changes === 0 ? { general: "Failed to update user" } : undefined,
+      ok: result.success,
+      errors: !result.success
+        ? { general: "Failed to update user" }
+        : undefined,
     };
   } catch (error: unknown) {
-    const isNotUnique =
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "SQLITE_CONSTRAINT" &&
-      "message" in error &&
-      typeof (error as any).message === "string" &&
-      (error as any).message.includes("email");
+    const err = error as { message?: string };
+    const isNotUnique = err.message?.includes(
+      "UNIQUE constraint failed: users.email",
+    );
     return {
       ok: false,
       errors: isNotUnique
@@ -129,31 +113,27 @@ export async function updateUserFromId(
     };
   }
 }
-//❌
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
- *
- * @param email - the email of the user
- * @returns the user object without the password or null if the user is not found.
+ * Gets user by email.
  */
 export async function getUserByEmail(email: string) {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as
-    | User
-    | undefined;
+  const row = await db
+    .prepare("SELECT * FROM users WHERE email = ?")
+    .bind(email)
+    .first<User>();
   return row ?? null;
 }
-//✅
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+/**
+ * Gets username by ID.
+ */
 export async function getUserNameById(id: number) {
   const db = getDb();
-  const row = db.prepare("SELECT name FROM users WHERE id = ?").get(id) as
-    | { name: string }
-    | undefined;
+  const row = await db
+    .prepare("SELECT name FROM users WHERE id = ?")
+    .bind(id)
+    .first<{ name: string }>();
   return row?.name ?? null;
 }
-//
