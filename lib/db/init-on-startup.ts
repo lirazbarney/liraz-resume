@@ -4,9 +4,9 @@ export async function initDb() {
   if (typeof window === "undefined") {
     try {
       await initializeTables();
-      console.log("🚀 D1 Database ready on app startup");
+      console.log("🚀 Vercel Postgres Database ready on app startup");
     } catch (error) {
-      console.error("❌ Failed to initialize D1:", error);
+      console.error("❌ Failed to initialize Vercel Postgres:", error);
     }
   }
 }

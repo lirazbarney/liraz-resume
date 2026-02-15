@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 // Initialize database on app startup
-// import "@/lib/db/init-on-startup";
+import "@/lib/db/init-on-startup";
 import MainHeader from "@/components/header/main-header";
 import { getCurrentUserById, getUserNameAction } from "@/lib/actions";
 
